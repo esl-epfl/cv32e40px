@@ -32,6 +32,7 @@
 module cv32e40p_ex_stage
   import cv32e40p_pkg::*;
   import cv32e40p_apu_core_pkg::*;
+  import cv32e40p_core_v_xif_pkg::*;
 #(
     parameter FPU              = 0,
     parameter APU_NARGS_CPU    = 3,
@@ -95,9 +96,17 @@ module cv32e40p_ex_stage
     output logic            apu_write_dep_o,
 
     // X-Interface
-    input logic        x_rvalid_i,
-    input logic        x_rd_i,
-    input logic [31:0] x_data_i,
+    input  logic        x_result_valid_assigned_i,
+    input  logic [ 4:0] x_result_rd_i,
+    input  logic [31:0] x_result_data_i,
+    input  logic        x_result_we_i,
+    input  logic        x_mem_instr_i,
+    input  logic [ 3:0] x_mem_id_ex_i,
+    output logic [31:0] x_mem_result_rdata_o,
+    output logic        x_mem_instr_wb_o,
+    output logic [ 3:0] x_mem_result_id_o,
+    output logic [31:0] result_fw_to_x_o,
+
 
     output logic apu_perf_type_o,
     output logic apu_perf_cont_o,
@@ -187,27 +196,39 @@ module cv32e40p_ex_stage
     regfile_alu_waddr_fw_o = '0;
     regfile_alu_we_fw_o    = '0;
     wb_contention          = 1'b0;
-
-    if (x_rvalid_i) begin
+    result_fw_to_x_o       = '0;
+    if (x_result_valid_assigned_i & x_result_we_i & (x_result_rd_i != 5'b00000)) begin
       regfile_alu_we_fw_o    = 1'b1;
-      regfile_alu_waddr_fw_o = x_rd_i;
-      regfile_alu_wdata_fw_o = x_data_i;
+      regfile_alu_waddr_fw_o = {1'b0, x_result_rd_i};
+      regfile_alu_wdata_fw_o = x_result_data_i;
+      if (regfile_alu_we_i) begin
+        wb_contention = 1'b1;
+      end
     end else begin
       // APU single cycle operations, and multicycle operations (>2cycles) are written back on ALU port
       if (apu_valid & (apu_singlecycle | apu_multicycle)) begin
         regfile_alu_we_fw_o    = 1'b1;
         regfile_alu_waddr_fw_o = apu_waddr;
         regfile_alu_wdata_fw_o = apu_result;
-
+        result_fw_to_x_o       = apu_result;
         if (regfile_alu_we_i & ~apu_en_i) begin
           wb_contention = 1'b1;
         end
       end else begin
         regfile_alu_we_fw_o    = regfile_alu_we_i & ~apu_en_i;  // private fpu incomplete?
         regfile_alu_waddr_fw_o = regfile_alu_waddr_i;
-        if (alu_en_i) regfile_alu_wdata_fw_o = alu_result;
-        if (mult_en_i) regfile_alu_wdata_fw_o = mult_result;
-        if (csr_access_i) regfile_alu_wdata_fw_o = csr_rdata_i;
+        if (alu_en_i) begin
+          regfile_alu_wdata_fw_o = alu_result;
+          result_fw_to_x_o       = alu_result;
+        end
+        if (mult_en_i) begin
+          regfile_alu_wdata_fw_o = mult_result;
+          result_fw_to_x_o       = mult_result;
+        end
+        if (csr_access_i) begin
+          regfile_alu_wdata_fw_o = csr_rdata_i;
+          result_fw_to_x_o       = csr_rdata_i;
+        end
       end
     end
   end
@@ -231,6 +252,9 @@ module cv32e40p_ex_stage
       regfile_wdata_wb_o = apu_result;
     end
   end
+
+  // X-Interface writeback
+  assign x_mem_result_rdata_o = lsu_rdata_i;
 
   // branch handling
   assign branch_decision_o = alu_cmp_result;
@@ -402,10 +426,14 @@ module cv32e40p_ex_stage
     if (~rst_n) begin
       regfile_waddr_lsu <= '0;
       regfile_we_lsu    <= 1'b0;
+      x_mem_instr_wb_o   <= 1'b0;
+      x_mem_result_id_o  <= '0;
     end else begin
       if (ex_valid_o) // wb_ready_i is implied
       begin
         regfile_we_lsu <= regfile_we_i & ~lsu_err_i;
+        x_mem_instr_wb_o  <= x_mem_instr_i;
+        x_mem_result_id_o <= x_mem_id_ex_i;
         if (regfile_we_i & ~lsu_err_i) begin
           regfile_waddr_lsu <= regfile_waddr_i;
         end
@@ -413,6 +441,7 @@ module cv32e40p_ex_stage
         // we are ready for a new instruction, but there is none available,
         // so we just flush the current one out of the pipe
         regfile_we_lsu <= 1'b0;
+        x_mem_instr_wb_o <= 1'b0;
       end
     end
   end

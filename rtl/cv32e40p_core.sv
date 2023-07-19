@@ -30,15 +30,16 @@
 
 module cv32e40p_core
   import cv32e40p_apu_core_pkg::*;
+  import cv32e40p_core_v_xif_pkg::*;
 #(
+    parameter COREV_X_IF = 0,
     parameter COREV_PULP =  0,  // PULP ISA Extension (incl. custom CSRs and hardware loop, excl. cv.elw)
     parameter COREV_CLUSTER = 0,  // PULP Cluster interface (incl. cv.elw)
     parameter FPU = 0,  // Floating Point Unit (interfaced via APU interface)
     parameter FPU_ADDMUL_LAT = 0,  // Floating-Point ADDition/MULtiplication lane pipeline registers number
     parameter FPU_OTHERS_LAT = 0,  // Floating-Point COMParison/CONVersion lanes pipeline registers number
     parameter ZFINX = 0,  // Float-in-General Purpose registers
-    parameter NUM_MHPMCOUNTERS = 1,
-    parameter COREV_X_IF = 0
+    parameter NUM_MHPMCOUNTERS = 1
 ) (
     // Clock and Reset
     input logic clk_i,
@@ -85,27 +86,37 @@ module cv32e40p_core
     input  logic [APU_NUSFLAGS_CPU-1:0]       apu_flags_i,
 
 
-    // X-Interface
-    // X-Request Channel
-    output logic              x_valid_o,
-    input  logic              x_ready_i,
-    output logic [ 2:0][31:0] x_rs_o,
-    output logic [ 2:0]       x_rs_valid_o,
-    output logic              x_rd_clean_o,
-    input  logic              x_accept_i,
-    input  logic              x_is_mem_op_i,
-    input  logic              x_writeback_i,
-    // X-Response Channel
-    input  logic              x_rvalid_i,
-    output logic              x_rready_o,
-    input  logic              x_rd_i,
-    input  logic [31:0]       x_data_i,
-    input  logic              x_dualwb_i,  // Moritz: not handled yet
-    input  logic              x_type_i,  // Moritz: not handled yet
-    input  logic              x_error_i,  // Moritz: not handled yet
-    // XMem-Request Channel
+    // CORE-V-XIF
+    // Compressed interface
+    output logic x_compressed_valid_o,
+    input  logic x_compressed_ready_i,
+    output x_compressed_req_t x_compressed_req_o,
+    input  x_compressed_resp_t x_compressed_resp_i,
 
-    // XMem-Response Channel
+    // Issue Interface
+    output logic x_issue_valid_o,
+    input  logic x_issue_ready_i,
+    output x_issue_req_t x_issue_req_o,
+    input  x_issue_resp_t x_issue_resp_i,
+
+    // Commit Interface
+    output logic x_commit_valid_o,
+    output x_commit_t x_commit_o,
+
+    // Memory request/response Interface
+    input  logic x_mem_valid_i,
+    output logic x_mem_ready_o,
+    input  x_mem_req_t x_mem_req_i,
+    output x_mem_resp_t x_mem_resp_o,
+
+    // Memory Result Interface
+    output logic x_mem_result_valid_o,
+    output x_mem_result_t x_mem_result_o,
+
+    // Result Interface
+    input  logic x_result_valid_i,
+    output logic x_result_ready_o,
+    input  x_result_t x_result_i,
 
 
     // Interrupt inputs
@@ -246,6 +257,14 @@ module cv32e40p_core
   logic                                     perf_apu_cont;
   logic                                     perf_apu_dep;
   logic                                     perf_apu_wb;
+
+  // X-Interface
+  logic        [ 3:0] x_compressed_id;
+  logic               x_result_valid_assigned;
+  logic               x_mem_instr;
+  logic        [ 3:0] x_mem_id_ex;
+  logic               x_mem_instr_wb;
+  logic        [31:0] result_fw_to_x;
 
   // Register Write Control
   logic        [                 5:0]       regfile_waddr_ex;
@@ -475,6 +494,14 @@ module cv32e40p_core
       .instr_err_i    (1'b0),  // Bus error (not used yet)
       .instr_err_pmp_i(instr_err_pmp),  // PMP error
 
+
+      // X-IF
+      .x_compressed_valid_o (x_compressed_valid_o),
+      .x_compressed_ready_i (x_compressed_ready_i),
+      .x_compressed_req_o   (x_compressed_req_o),
+      .x_compressed_resp_i  (x_compressed_resp_i),
+      .x_compressed_id_i    (x_compressed_id),
+
       // outputs to ID stage
       .instr_valid_id_o (instr_valid_id),
       .instr_rdata_id_o (instr_rdata_id),
@@ -531,6 +558,7 @@ module cv32e40p_core
   //                                             //
   /////////////////////////////////////////////////
   cv32e40p_id_stage #(
+      .COREV_X_IF      (COREV_X_IF),
       .COREV_PULP      (COREV_PULP),
       .COREV_CLUSTER   (COREV_CLUSTER),
       .N_HWLP          (N_HWLP),
@@ -655,18 +683,40 @@ module cv32e40p_core
       .apu_perf_dep_o        (perf_apu_dep),
       .apu_busy_i            (apu_busy),
 
-      // X-Interface
-      .x_valid_o             (x_valid_o),
-      .x_ready_i             (x_ready_i),
-      .x_rs_o                (x_rs_o),
-      .x_rs_valid_o          (x_rs_valid_o),
-      .x_rd_clean_o          (x_rd_clean_o),
-      .x_accept_i            (x_accept_i),
-      .x_is_mem_op_i         (x_is_mem_op_i),
-      .x_writeback_i         (x_writeback_i),
-      .x_rvalid_i            (x_rvalid_i),
-      .x_rd_i                (x_rd_i),
+      // CORE-V-XIF
+      // Compressed Interface
+      .x_compressed_id_o (x_compressed_id),
 
+      // Issue Interface
+      .x_issue_valid_o (x_issue_valid_o),
+      .x_issue_ready_i (x_issue_ready_i),
+      .x_issue_req_o (x_issue_req_o),
+      .x_issue_resp_i (x_issue_resp_i),
+
+      // Commit Interface
+      .x_commit_valid_o (x_commit_valid_o),
+      .x_commit_o (x_commit_o),
+
+      // Memory request/response Interface
+      .x_mem_valid_i (x_mem_valid_i),
+      .x_mem_ready_o (x_mem_ready_o),
+      .x_mem_req_i (x_mem_req_i),
+      .x_mem_resp_o (x_mem_resp_o),
+
+      // Memory Result Interface
+      .x_mem_result_valid_o (x_mem_result_valid_o),
+      .x_mem_result_err_o (x_mem_result_o.err),
+
+      // Result Interface
+      .x_result_valid_i (x_result_valid_i),
+      .x_result_ready_o (x_result_ready_o),
+      .x_result_i (x_result_i),
+      .x_result_valid_assigned_o (x_result_valid_assigned),
+
+      .x_mem_instr_ex_o(x_mem_instr),
+      .x_mem_id_ex_o   (x_mem_id_ex),
+      .x_mem_instr_wb_i(x_mem_instr_wb),
+      .result_fw_to_x_i(result_fw_to_x),
 
       // CSR ID/EX
       .csr_access_ex_o      (csr_access_ex),
@@ -853,11 +903,16 @@ module cv32e40p_core
       .apu_result_i  (apu_result_i),
 
       // X-Interface
-      .x_rvalid_i(1'b0),
-      // .x_rvalid_i                 ( x_rvalid_i                   ),
-      .x_rd_i    (x_rd_i),
-      .x_data_i  (x_data_i),
-
+      .x_result_valid_assigned_i (x_result_valid_assigned),
+      .x_result_rd_i             (x_result_i.rd),
+      .x_result_data_i           (x_result_i.data),
+      .x_result_we_i             (x_result_i.we),
+      .x_mem_instr_i             (x_mem_instr),
+      .x_mem_id_ex_i             (x_mem_id_ex),
+      .x_mem_result_rdata_o      (x_mem_result_o.rdata),
+      .x_mem_instr_wb_o          (x_mem_instr_wb),
+      .x_mem_result_id_o         (x_mem_result_o.id),
+      .result_fw_to_x_o          (result_fw_to_x),
 
       .lsu_en_i   (data_req_ex),
       .lsu_rdata_i(lsu_rdata),

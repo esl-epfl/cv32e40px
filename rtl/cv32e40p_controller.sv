@@ -46,7 +46,8 @@ module cv32e40p_controller import cv32e40p_pkg::*;
   // decoder related signals
   output logic        deassert_we_o,              // deassert write enable for next instruction
 
-  input  logic        illegal_insn_i,             // decoder encountered an invalid instruction
+  input  logic        illegal_insn_i,             // xif confirmed the invalid instruction
+  input  logic        illegal_insn_dec_i,         // decoder encountered an invalid instruction
   input  logic        ecall_insn_i,               // decoder encountered an ecall instruction
   input  logic        mret_insn_i,                // decoder encountered an mret instruction
   input  logic        uret_insn_i,                // decoder encountered an uret instruction
@@ -527,13 +528,13 @@ module cv32e40p_controller import cv32e40p_pkg::*;
 
                 is_hwlp_illegal  = is_hwlp_body & (jump_in_dec || branch_in_id_dec || mret_insn_i || uret_insn_i || dret_insn_i || is_compressed_i || fencei_insn_i || wfi_active);
 
-                if(illegal_insn_i || is_hwlp_illegal) begin
-
-                  halt_if_o         = 1'b1;
-                  halt_id_o         = 1'b0;
-                  ctrl_fsm_ns       = id_ready_i ? FLUSH_EX : DECODE;
-                  illegal_insn_n    = 1'b1;
-
+                if(illegal_insn_dec_i || is_hwlp_illegal) begin
+                  if(illegal_insn_i) begin
+                    halt_if_o         = 1'b1;
+                    halt_id_o         = 1'b0;
+                    ctrl_fsm_ns       = id_ready_i ? FLUSH_EX : DECODE;
+                    illegal_insn_n    = 1'b1;
+                  end
                 end else begin
 
                   //decoding block

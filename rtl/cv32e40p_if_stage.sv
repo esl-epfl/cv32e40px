@@ -26,6 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 module cv32e40p_if_stage #(
+    parameter COREV_X_IF = 0,
     parameter COREV_PULP = 0, // PULP ISA Extension (including PULP specific CSRs and hardware loop, excluding cv.elw)
     parameter PULP_OBI = 0,  // Legacy PULP OBI behavior
     parameter PULP_SECURE = 0,
@@ -57,6 +58,13 @@ module cv32e40p_if_stage #(
     input logic [31:0] instr_rdata_i,
     input logic instr_err_i,      // External bus error (validity defined by instr_rvalid_i) (not used yet)
     input logic instr_err_pmp_i,  // PMP error (validity defined by instr_gnt_i)
+
+    // compressed x-interface
+    output logic x_compressed_valid_o,
+    input  logic x_compressed_ready_i,
+    output cv32e40p_core_v_xif_pkg::x_compressed_req_t x_compressed_req_o,
+    input  cv32e40p_core_v_xif_pkg::x_compressed_resp_t x_compressed_resp_i,
+    input  logic [3:0] x_compressed_id_i,
 
     // Output of IF Pipeline stage
     output logic instr_valid_id_o,  // instruction in IF/ID pipeline is valid
@@ -122,10 +130,11 @@ module cv32e40p_if_stage #(
   logic        instr_valid;
 
   logic        illegal_c_insn;
+  logic        illegal_c_insn_dec;
   logic [31:0] instr_aligned;
   logic [31:0] instr_decompressed;
+  logic [31:0] instr_decompressed_dec;
   logic        instr_compressed_int;
-
 
   // exception PC selection mux
   always_comb begin : EXC_PC_MUX
@@ -275,10 +284,36 @@ module cv32e40p_if_stage #(
       .ZFINX(ZFINX)
   ) compressed_decoder_i (
       .instr_i        (instr_aligned),
-      .instr_o        (instr_decompressed),
+      .instr_o        (instr_decompressed_dec),
       .is_compressed_o(instr_compressed_int),
-      .illegal_instr_o(illegal_c_insn)
+      .illegal_instr_o(illegal_c_insn_dec)
   );
+
+
+  generate
+    if (COREV_X_IF) begin
+      assign x_compressed_valid_o = illegal_c_insn_dec;
+      assign x_compressed_req_o.instr = instr_aligned;
+      assign x_compressed_req_o.mode = 2'b00; // Machine Mode
+      assign x_compressed_req_o.id = x_compressed_id_i;
+
+      always_comb begin
+        instr_decompressed = instr_decompressed_dec;
+        illegal_c_insn     = illegal_c_insn_dec;
+        if (x_compressed_valid_o & x_compressed_ready_i & x_compressed_resp_i.accept) begin
+          instr_decompressed = x_compressed_resp_i.instr;
+          illegal_c_insn = 1'b0;
+        end else if (x_compressed_valid_o & x_compressed_ready_i & ~x_compressed_resp_i.accept) begin
+          instr_decompressed = x_compressed_resp_i.instr;
+          illegal_c_insn = 1'b1;
+        end
+      end
+    end else begin
+      assign instr_decompressed = instr_decompressed_dec;
+      assign illegal_c_insn     = illegal_c_insn_dec;
+    end
+  endgenerate
+
 
   //----------------------------------------------------------------------------
   // Assertions
