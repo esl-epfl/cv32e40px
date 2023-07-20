@@ -27,6 +27,19 @@ add_ignored_outputs apu_operands_o* -Both
 add_ignored_outputs apu_op_o* -Both
 add_ignored_outputs apu_flags_o* -Both
 
+// core_v_xif signals
+add ignored outputs x_compressed_valid_o -Both
+add ignored outputs x_compressed_req_o* -Both
+add ignored outputs x_issue_valid_o -Both
+add ignored outputs x_issue_req_o* -Both
+add ignored outputs x_commit_valid_o -Both
+add ignored outputs x_commit_o* -Both
+add ignored outputs x_mem_ready_o -Both
+add ignored outputs x_mem_resp_o* -Both
+add ignored outputs x_mem_result_valid_o -Both
+add ignored outputs x_mem_result_o* -Both
+add ignored outputs x_result_ready_o -Both
+
 write_hier_compare_dofile hier_compare_r2r.do -constraint -replace
 
 run_hier_compare hier_compare_r2r.do -ROOT_module cv32e40p_core cv32e40p_core
