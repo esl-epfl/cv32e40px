@@ -162,6 +162,38 @@ module cv32e40px_top import cv32e40px_core_v_xif_pkg::*; #(
       .apu_result_i  (apu_rdata),
       .apu_flags_i   (apu_rflags),
 
+      // CORE-V-XIF
+      // Compressed interface
+      .x_compressed_valid_o(x_compressed_valid_o),
+      .x_compressed_ready_i(x_compressed_ready_i),
+      .x_compressed_req_o(x_compressed_req_o),
+      .x_compressed_resp_i(x_compressed_resp_i),
+
+      // Issue Interface
+      .x_issue_valid_o(x_issue_valid_o),
+      .x_issue_ready_i(x_issue_ready_i),
+      .x_issue_req_o(x_issue_req_o),
+      .x_issue_resp_i(x_issue_resp_i),
+
+      // Commit Interface
+      .x_commit_valid_o(x_commit_valid_o),
+      .x_commit_o(x_commit_o),
+
+      // Memory request/response Interface
+      .x_mem_valid_i(x_mem_valid_i),
+      .x_mem_ready_o(x_mem_ready_o),
+      .x_mem_req_i(x_mem_req_i),
+      .x_mem_resp_o(x_mem_resp_o),
+
+      // Memory Result Interface
+      .x_mem_result_valid_o(x_mem_result_valid_o),
+      .x_mem_result_o(x_mem_result_o),
+
+      // Result Interface
+      .x_result_valid_i(x_result_valid_i),
+      .x_result_ready_o(x_result_ready_o),
+      .x_result_i(x_result_i),
+
       .irq_i    (irq_i),
       .irq_ack_o(irq_ack_o),
       .irq_id_o (irq_id_o),
