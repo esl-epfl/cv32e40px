@@ -47,7 +47,7 @@ package cv32e40px_core_v_xif_pkg;
   typedef struct packed {
     logic accept;
     logic writeback;
-    logic float;
+    //logic float;
     logic dualwrite;
     logic dualread;
     logic loadstore;

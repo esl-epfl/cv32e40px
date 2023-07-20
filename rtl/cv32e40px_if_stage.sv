@@ -311,9 +311,10 @@ module cv32e40px_if_stage #(
     end else begin
       assign instr_decompressed = instr_decompressed_dec;
       assign illegal_c_insn     = illegal_c_insn_dec;
+      assign x_compressed_valid_o = '0;
+      assign x_compressed_req_o   = '0;
     end
   endgenerate
-
 
   //----------------------------------------------------------------------------
   // Assertions

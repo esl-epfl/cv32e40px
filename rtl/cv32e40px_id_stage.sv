@@ -30,6 +30,7 @@
 module cv32e40px_id_stage
   import cv32e40px_pkg::*;
   import cv32e40px_apu_core_pkg::*;
+  import cv32e40px_core_v_xif_pkg::*;
 #(
     parameter COREV_X_IF = 0,
     parameter COREV_PULP =  1,  // PULP ISA Extension (including PULP specific CSRs and hardware loop, excluding cv.elw)
@@ -427,6 +428,7 @@ module cv32e40px_id_stage
 
   // X-Interface
   logic illegal_insn;
+  logic x_illegal_insn;
   logic [4:0] waddr_id;
   logic [4:0] waddr_ex;
   logic [4:0] waddr_wb;
@@ -1129,7 +1131,18 @@ module cv32e40px_id_stage
       assign x_stall                   = 1'b0;
       assign x_result_valid_assigned_o = 1'b0;
       assign x_mem_valid               = 1'b0;
+      assign x_mem_data_req            = '0;
+      assign x_mem_data_type_id        = '0;
       assign x_issue_valid_o           = 1'b0;
+      assign x_compressed_id_o         = '0;
+      assign x_issue_req_o             = '0;
+      assign x_commit_valid_o          = '0;
+      assign x_commit_o                = '0;
+      assign x_mem_ready_o             = '0;
+      assign x_mem_resp_o              = '0;
+      assign x_mem_result_valid_o      = '0;
+      assign x_mem_result_err_o        = '0;
+      assign x_result_ready_o          = '0;
 
     end : gen_no_x_disp
   endgenerate
@@ -1759,7 +1772,7 @@ module cv32e40px_id_stage
         end
 
         x_mem_instr_ex_o     <= 1'b0;
-        x_mem_id_ex_o        <= 1'b0;
+        x_mem_id_ex_o        <= '0;
 
         data_misaligned_ex_o <= 1'b0;
 
@@ -1804,7 +1817,7 @@ module cv32e40px_id_stage
           x_mem_id_ex_o        <= x_mem_req_i.id;
         end else begin
           x_mem_instr_ex_o     <= 1'b0;
-          x_mem_id_ex_o        <= 1'b0;
+          x_mem_id_ex_o        <= '0;
           data_req_ex_o        <= 1'b0;
           data_load_event_ex_o <= 1'b0;
         end
