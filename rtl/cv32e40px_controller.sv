@@ -28,7 +28,7 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-module cv32e40p_controller import cv32e40p_pkg::*;
+module cv32e40px_controller import cv32e40px_pkg::*;
 #(
   parameter COREV_CLUSTER = 0,
   parameter COREV_PULP    = 1
@@ -1587,4 +1587,4 @@ endgenerate
 
 `endif
 
-endmodule // cv32e40p_controller
+endmodule // cv32e40px_controller

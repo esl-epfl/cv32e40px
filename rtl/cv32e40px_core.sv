@@ -28,9 +28,9 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-module cv32e40p_core
-  import cv32e40p_apu_core_pkg::*;
-  import cv32e40p_core_v_xif_pkg::*;
+module cv32e40px_core
+  import cv32e40px_apu_core_pkg::*;
+  import cv32e40px_core_v_xif_pkg::*;
 #(
     parameter COREV_X_IF = 0,
     parameter COREV_PULP =  0,  // PULP ISA Extension (incl. custom CSRs and hardware loop, excl. cv.elw)
@@ -135,7 +135,7 @@ module cv32e40p_core
     output logic core_sleep_o
 );
 
-  import cv32e40p_pkg::*;
+  import cv32e40px_pkg::*;
 
   // Unused parameters and signals (left in code for future design extensions)
   localparam PULP_SECURE = 0;
@@ -419,7 +419,7 @@ module cv32e40p_core
   logic clk;
   logic fetch_enable;
 
-  cv32e40p_sleep_unit #(
+  cv32e40px_sleep_unit #(
       .COREV_CLUSTER(COREV_CLUSTER)
   ) sleep_unit_i (
       // Clock, reset interface
@@ -460,7 +460,7 @@ module cv32e40p_core
   //  |___|_|     |____/ |_/_/   \_\____|_____|   //
   //                                              //
   //////////////////////////////////////////////////
-  cv32e40p_if_stage #(
+  cv32e40px_if_stage #(
       .COREV_PULP (COREV_PULP),
       .PULP_OBI   (PULP_OBI),
       .PULP_SECURE(PULP_SECURE),
@@ -557,7 +557,7 @@ module cv32e40p_core
   //  |___|____/  |____/ |_/_/   \_\____|_____|  //
   //                                             //
   /////////////////////////////////////////////////
-  cv32e40p_id_stage #(
+  cv32e40px_id_stage #(
       .COREV_X_IF      (COREV_X_IF),
       .COREV_PULP      (COREV_PULP),
       .COREV_CLUSTER   (COREV_CLUSTER),
@@ -823,7 +823,7 @@ module cv32e40p_core
   //  |_____/_/\_\ |____/ |_/_/   \_\____|_____|     //
   //                                                 //
   /////////////////////////////////////////////////////
-  cv32e40p_ex_stage #(
+  cv32e40px_ex_stage #(
       .FPU             (FPU),
       .APU_NARGS_CPU   (APU_NARGS_CPU),
       .APU_WOP_CPU     (APU_WOP_CPU),
@@ -963,7 +963,7 @@ module cv32e40p_core
   //                                                                                    //
   ////////////////////////////////////////////////////////////////////////////////////////
 
-  cv32e40p_load_store_unit #(
+  cv32e40px_load_store_unit #(
       .PULP_OBI(PULP_OBI)
   ) load_store_unit_i (
       .clk  (clk),
@@ -1027,7 +1027,7 @@ module cv32e40p_core
   //   Control and Status Registers   //
   //////////////////////////////////////
 
-  cv32e40p_cs_registers #(
+  cv32e40px_cs_registers #(
       .N_HWLP          (N_HWLP),
       .A_EXTENSION     (A_EXTENSION),
       .FPU             (FPU),
@@ -1150,7 +1150,7 @@ module cv32e40p_core
 
   generate
     if (PULP_SECURE && USE_PMP) begin : gen_pmp
-      cv32e40p_pmp #(
+      cv32e40px_pmp #(
           .N_PMP_ENTRIES(N_PMP_ENTRIES)
       ) pmp_unit_i (
           .clk  (clk),

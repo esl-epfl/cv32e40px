@@ -11,8 +11,8 @@
 // Wrapper for a fpnew
 // Contributor: Davide Schiavone <davide@openhwgroup.org>
 
-module cv32e40p_fp_wrapper
-  import cv32e40p_apu_core_pkg::*;
+module cv32e40px_fp_wrapper
+  import cv32e40px_apu_core_pkg::*;
 #(
     parameter FPU_ADDMUL_LAT = 0,  // Floating-Point ADDition/MULtiplication computing lane pipeline registers number
     parameter FPU_OTHERS_LAT = 0  // Floating-Point COMParison/CONVersion computing lanes pipeline registers number
@@ -37,7 +37,7 @@ module cv32e40p_fp_wrapper
 );
 
 
-  import cv32e40p_pkg::*;
+  import cv32e40px_pkg::*;
   import fpnew_pkg::*;
 
   logic [        fpnew_pkg::OP_BITS-1:0] fpu_op;
@@ -123,5 +123,5 @@ module cv32e40p_fp_wrapper
       .busy_o        (  /* unused */)
   );
 
-endmodule  // cv32e40p_fp_wrapper
+endmodule  // cv32e40px_fp_wrapper
 

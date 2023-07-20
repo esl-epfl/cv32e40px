@@ -12,15 +12,15 @@
 // Engineer:       Moritz Imfeld - moimfeld@student.ethz.ch                   //
 //                                                                            //
 // Design Name:    x-interface dispatcher                                     //
-// Project Name:   cv32e40p                                                   //
+// Project Name:   cv32e40px                                                   //
 // Language:       SystemVerilog                                              //
 //                                                                            //
 // Description:    Dispatcher for sending instructions to the x-interface.    //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-module cv32e40p_x_disp
-  import cv32e40p_core_v_xif_pkg::*;
+module cv32e40px_x_disp
+  import cv32e40px_core_v_xif_pkg::*;
 (
     // clock and reset
     input logic clk_i,
@@ -91,7 +91,7 @@ module cv32e40p_x_disp
     input logic id_ready_i,
     input logic ex_valid_i,
     input logic ex_ready_i,
-    input cv32e40p_pkg::PrivLvl_t current_priv_lvl_i,
+    input cv32e40px_pkg::PrivLvl_t current_priv_lvl_i,
     input logic data_req_dec_i
 );
 
@@ -115,7 +115,7 @@ module cv32e40p_x_disp
                                      & ~(x_rs_addr_i[1] == mem_instr_waddr_ex_i & mem_instr_we_ex_i) & ~(x_rs_addr_i[1] == waddr_wb_i & ~ex_valid_i);
   assign x_issue_req_rs_valid_o[2] = (~scoreboard_q[x_rs_addr_i[2]] | x_ex_fwd_o[2] | x_wb_fwd_o[2])
                                      & ~(x_rs_addr_i[2] == mem_instr_waddr_ex_i & mem_instr_we_ex_i) & ~(x_rs_addr_i[2] == waddr_wb_i & ~ex_valid_i);
-  assign x_issue_req_ecs_valid = 1'b1; // extension context status is not implemented in cv32e40p
+  assign x_issue_req_ecs_valid = 1'b1; // extension context status is not implemented in cv32e40px
 
   // commit interface
   assign x_commit_valid_o = x_issue_valid_o;
@@ -170,10 +170,10 @@ module cv32e40p_x_disp
   always_comb begin
     x_issue_req_mode_o = 2'b11;
     case (current_priv_lvl_i)
-      cv32e40p_pkg::PRIV_LVL_M: x_issue_req_mode_o = 2'b11;
-      cv32e40p_pkg::PRIV_LVL_H: x_issue_req_mode_o = 2'b10;
-      cv32e40p_pkg::PRIV_LVL_S: x_issue_req_mode_o = 2'b01;
-      cv32e40p_pkg::PRIV_LVL_U: x_issue_req_mode_o = 2'b00;
+      cv32e40px_pkg::PRIV_LVL_M: x_issue_req_mode_o = 2'b11;
+      cv32e40px_pkg::PRIV_LVL_H: x_issue_req_mode_o = 2'b10;
+      cv32e40px_pkg::PRIV_LVL_S: x_issue_req_mode_o = 2'b01;
+      cv32e40px_pkg::PRIV_LVL_U: x_issue_req_mode_o = 2'b00;
       default:    x_issue_req_mode_o = 2'b11;
     endcase
   end
@@ -233,4 +233,4 @@ module cv32e40p_x_disp
     end
   end
 
-endmodule : cv32e40p_x_disp
+endmodule : cv32e40px_x_disp

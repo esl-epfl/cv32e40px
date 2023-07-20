@@ -20,8 +20,8 @@
 //               Halfdan Bechmann, Silicon Labs <halfdan.bechmann@silabs.com>
 //               Yoann Pruvost, Dolphin Design <yoann.pruvost@dolphin.fr>
 
-package cv32e40p_rvfi_pkg;
-  import cv32e40p_pkg::*;
+package cv32e40px_rvfi_pkg;
+  import cv32e40px_pkg::*;
 
   // RVFI only supports MHPMCOUNTER_WIDTH == 64
   parameter MHPMCOUNTER_WORDS = MHPMCOUNTER_WIDTH / 32;
@@ -123,4 +123,4 @@ package cv32e40p_rvfi_pkg;
     logic trap;
   } rvfi_trap_t;
 
-endpackage  // cv32e40p_rvfi_pkg
+endpackage  // cv32e40px_rvfi_pkg

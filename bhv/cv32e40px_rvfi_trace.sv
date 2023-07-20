@@ -19,8 +19,8 @@
 // Contributors: Halfdan Bechmann, Silicon Labs <halfdan.bechmann@silabs.com>
 //               Yoann Pruvost, Dolphin Design <yoann.pruvost@dolphin.fr>
 
-module cv32e40p_rvfi_trace
-  import cv32e40p_pkg::*;
+module cv32e40px_rvfi_trace
+  import cv32e40px_pkg::*;
 #(
     parameter FPU   = 0,
     parameter ZFINX = 0
@@ -56,7 +56,7 @@ module cv32e40p_rvfi_trace
     input logic [31:0] rvfi_frs2_rdata
 );
 
-  import cv32e40p_tracer_pkg::*;
+  import cv32e40px_tracer_pkg::*;
 
   logic rst_n;
   assign rst_n = rst_ni;
@@ -136,7 +136,7 @@ module cv32e40p_rvfi_trace
   assign imm_shuffle_type = '0;
   assign imm_clip_type = '0;
 
-  cv32e40p_compressed_decoder #(
+  cv32e40px_compressed_decoder #(
       .FPU(FPU)
   ) rvfi_trace_decompress_i (
       .instr_i(rvfi_insn),
@@ -144,7 +144,7 @@ module cv32e40p_rvfi_trace
       .is_compressed_o(is_compressed)
   );
 
-  `include "cv32e40p_instr_trace.svh"
+  `include "cv32e40px_instr_trace.svh"
 instr_trace_t trace_retire;
 
   function instr_trace_t trace_new_instr();

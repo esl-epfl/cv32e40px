@@ -37,7 +37,7 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-module cv32e40p_prefetch_controller #(
+module cv32e40px_prefetch_controller #(
     parameter PULP_OBI = 0,  // Legacy PULP OBI behavior
     parameter COREV_PULP = 1,  // PULP ISA Extension (including PULP specific CSRs and hardware loop, excluding cv.elw)
     parameter DEPTH = 4,  // Prefetch FIFO Depth
@@ -77,7 +77,7 @@ module cv32e40p_prefetch_controller #(
     input logic fifo_empty_i  // FIFO is empty
 );
 
-  import cv32e40p_pkg::*;
+  import cv32e40px_pkg::*;
 
   prefetch_state_e state_q, next_state;
 
@@ -128,7 +128,7 @@ module cv32e40p_prefetch_controller #(
   // Assumes that corresponding response is at least 1 cycle after request
   //
   // - Only request transaction when fetch stage requires fetch (req_i), and
-  // - make sure that FIFO (cv32e40p_fetch_fifo) never overflows (fifo_cnt_i + cnt_q < DEPTH)
+  // - make sure that FIFO (cv32e40px_fetch_fifo) never overflows (fifo_cnt_i + cnt_q < DEPTH)
   //////////////////////////////////////////////////////////////////////////////
 
   // Prefetcher will only perform word fetches
@@ -360,4 +360,4 @@ module cv32e40p_prefetch_controller #(
     end
   end
 
-endmodule  // cv32e40p_prefetch_controller
+endmodule  // cv32e40px_prefetch_controller

@@ -19,8 +19,8 @@
 // Contributors: Steve Richmond, Silicon Labs <steve.richmond@silabs.com>
 //               Pascal Gouedo, Dolphin Design <pascal.gouedo@dolphin.fr>
 
-package cv32e40p_tracer_pkg;
-  import cv32e40p_pkg::*;
+package cv32e40px_tracer_pkg;
+  import cv32e40px_pkg::*;
 
   // settings
   parameter bit SymbolicRegs = 0;  // show abi names for registers

@@ -20,11 +20,11 @@
 //               Halfdan Bechmann, Silicon Labs <halfdan.bechmann@silabs.com>
 //               Yoann Pruvost, Dolphin Design <yoann.pruvost@dolphin.fr>
 
-`include "cv32e40p_rvfi_pkg.sv"
+`include "cv32e40px_rvfi_pkg.sv"
 
-module cv32e40p_rvfi
-  import cv32e40p_pkg::*;
-  import cv32e40p_rvfi_pkg::*;
+module cv32e40px_rvfi
+  import cv32e40px_pkg::*;
+  import cv32e40px_rvfi_pkg::*;
 #(
     parameter FPU   = 0,
     parameter ZFINX = 0
@@ -1709,4 +1709,4 @@ module cv32e40p_rvfi
     join
   end
 
-endmodule  // cv32e40p_rvfi
+endmodule  // cv32e40px_rvfi

@@ -11,7 +11,7 @@
 // Top file instantiating a CV32E40P core and an optional FPU
 // Contributor: Davide Schiavone <davide@openhwgroup.org>
 
-module cv32e40p_top import cv32e40p_core_v_xif_pkg::*; #(
+module cv32e40px_top import cv32e40px_core_v_xif_pkg::*; #(
     parameter COREV_X_IF = 0,
     parameter COREV_PULP = 0, // PULP ISA Extension (incl. custom CSRs and hardware loop, excl. cv.elw)
     parameter COREV_CLUSTER = 0,  // PULP Cluster interface (incl. cv.elw)
@@ -100,7 +100,7 @@ module cv32e40p_top import cv32e40p_core_v_xif_pkg::*; #(
     output logic core_sleep_o
 );
 
-  import cv32e40p_apu_core_pkg::*;
+  import cv32e40px_apu_core_pkg::*;
 
   // Core to FPU
   logic                              clk;
@@ -116,7 +116,7 @@ module cv32e40p_top import cv32e40p_core_v_xif_pkg::*; #(
   logic [APU_NUSFLAGS_CPU-1:0]       apu_rflags;
 
   // Instantiate the Core
-  cv32e40p_core #(
+  cv32e40px_core #(
       .COREV_X_IF      (COREV_X_IF),
       .COREV_PULP      (COREV_PULP),
       .COREV_CLUSTER   (COREV_CLUSTER),
@@ -178,7 +178,7 @@ module cv32e40p_top import cv32e40p_core_v_xif_pkg::*; #(
   generate
     if (FPU) begin : fpu_gen
       // FPU clock gate
-      cv32e40p_clock_gate core_clock_gate_i (
+      cv32e40px_clock_gate core_clock_gate_i (
           .clk_i       (clk_i),
           .en_i        (!core_sleep_o),
           .scan_cg_en_i(scan_cg_en_i),
@@ -186,7 +186,7 @@ module cv32e40p_top import cv32e40p_core_v_xif_pkg::*; #(
       );
 
       // Instantiate the FPU wrapper
-      cv32e40p_fp_wrapper #(
+      cv32e40px_fp_wrapper #(
           .FPU_ADDMUL_LAT(FPU_ADDMUL_LAT),
           .FPU_OTHERS_LAT(FPU_OTHERS_LAT)
       ) fp_wrapper_i (

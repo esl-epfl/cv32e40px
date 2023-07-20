@@ -11,7 +11,7 @@
 // CORE-V-XIF Package
 // Contributor: Moritz Imfeld <moimfeld@student.ethz.ch>
 
-package cv32e40p_core_v_xif_pkg;
+package cv32e40px_core_v_xif_pkg;
 
   // cv-x-if parameters
   parameter int          X_NUM_RS    = 3;

@@ -21,8 +21,8 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-module cv32e40p_int_controller
-  import cv32e40p_pkg::*;
+module cv32e40px_int_controller
+  import cv32e40px_pkg::*;
 #(
     parameter PULP_SECURE = 0
 ) (
@@ -33,13 +33,13 @@ module cv32e40p_int_controller
     input logic [31:0] irq_i,  // Level-triggered interrupt inputs
     input logic        irq_sec_i,  // Interrupt secure bit from EU
 
-    // To cv32e40p_controller
+    // To cv32e40px_controller
     output logic       irq_req_ctrl_o,
     output logic       irq_sec_ctrl_o,
     output logic [4:0] irq_id_ctrl_o,
     output logic       irq_wu_ctrl_o,
 
-    // To/from cv32e40p_cs_registers
+    // To/from cv32e40px_cs_registers
     input  logic     [31:0] mie_bypass_i,  // MIE CSR (bypass)
     output logic     [31:0] mip_o,  // MIP CSR
     input  logic            m_ie_i,  // Interrupt enable bit from CSR (M mode)
@@ -149,4 +149,4 @@ module cv32e40p_int_controller
 
   assign irq_sec_ctrl_o = irq_sec_q;
 
-endmodule  // cv32e40p_int_controller
+endmodule  // cv32e40px_int_controller

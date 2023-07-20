@@ -25,7 +25,7 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-module cv32e40p_if_stage #(
+module cv32e40px_if_stage #(
     parameter COREV_X_IF = 0,
     parameter COREV_PULP = 0, // PULP ISA Extension (including PULP specific CSRs and hardware loop, excluding cv.elw)
     parameter PULP_OBI = 0,  // Legacy PULP OBI behavior
@@ -62,8 +62,8 @@ module cv32e40p_if_stage #(
     // compressed x-interface
     output logic x_compressed_valid_o,
     input  logic x_compressed_ready_i,
-    output cv32e40p_core_v_xif_pkg::x_compressed_req_t x_compressed_req_o,
-    input  cv32e40p_core_v_xif_pkg::x_compressed_resp_t x_compressed_resp_i,
+    output cv32e40px_core_v_xif_pkg::x_compressed_req_t x_compressed_req_o,
+    input  cv32e40px_core_v_xif_pkg::x_compressed_resp_t x_compressed_resp_i,
     input  logic [3:0] x_compressed_id_i,
 
     // Output of IF Pipeline stage
@@ -107,7 +107,7 @@ module cv32e40p_if_stage #(
     output logic perf_imiss_o  // Instruction Fetch Miss
 );
 
-  import cv32e40p_pkg::*;
+  import cv32e40px_pkg::*;
 
   logic if_valid, if_ready;
 
@@ -185,7 +185,7 @@ module cv32e40p_if_stage #(
   assign fetch_failed    = 1'b0; // PMP is not supported in CV32E40P
 
   // prefetch buffer, caches a fixed number of instructions
-  cv32e40p_prefetch_buffer #(
+  cv32e40px_prefetch_buffer #(
       .PULP_OBI  (PULP_OBI),
       .COREV_PULP(COREV_PULP)
   ) prefetch_buffer_i (
@@ -263,7 +263,7 @@ module cv32e40p_if_stage #(
   assign if_ready = fetch_valid & id_ready_i;
   assign if_valid = (~halt_if_i) & if_ready;
 
-  cv32e40p_aligner aligner_i (
+  cv32e40px_aligner aligner_i (
       .clk             (clk),
       .rst_n           (rst_n),
       .fetch_valid_i   (fetch_valid),
@@ -279,7 +279,7 @@ module cv32e40p_if_stage #(
       .pc_o            (pc_if_o)
   );
 
-  cv32e40p_compressed_decoder #(
+  cv32e40px_compressed_decoder #(
       .FPU  (FPU),
       .ZFINX(ZFINX)
   ) compressed_decoder_i (

@@ -25,8 +25,8 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-module cv32e40p_alu
-  import cv32e40p_pkg::*;
+module cv32e40px_alu
+  import cv32e40px_pkg::*;
 (
     input logic               clk,
     input logic               rst_n,
@@ -741,7 +741,7 @@ module cv32e40p_alu
   logic [ 4:0] fl1_result;  // holds the index of the last '1'
   logic [ 5:0] bitop_result;  // result of all bitop operations muxed together
 
-  cv32e40p_popcnt popcnt_i (
+  cv32e40px_popcnt popcnt_i (
       .in_i    (operand_a_i),
       .result_o(cnt_result)
   );
@@ -761,7 +761,7 @@ module cv32e40p_alu
     endcase
   end
 
-  cv32e40p_ff_one ff_one_i (
+  cv32e40px_ff_one ff_one_i (
       .in_i       (ff_input),
       .first_one_o(ff1_result),
       .no_ones_o  (ff_no_one)
@@ -895,7 +895,7 @@ module cv32e40p_alu
                      (operator_i == ALU_REM) || (operator_i == ALU_REMU));
 
   // inputs A and B are swapped
-  cv32e40p_alu_div alu_div_i (
+  cv32e40px_alu_div alu_div_i (
       .Clk_CI (clk),
       .Rst_RBI(rst_n),
 

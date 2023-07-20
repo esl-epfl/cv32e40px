@@ -21,59 +21,48 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Engineer:       Arjan Bink - arjan.bink@silabs.com                         //
 //                                                                            //
-// Design Name:    cv32e40p_apu_tracer.sv (APU trace)                         //
+// Design Name:    cv32e40px_core_log.sv (cv32e40px_core simulation log)        //
 // Project Name:   CV32E40P                                                   //
 // Language:       SystemVerilog                                              //
 //                                                                            //
 // Description:    Logs the following:                                        //
 //                                                                            //
-//                 - APU register file write address                          //
-//                 - APU register file write data                             //
+//                 - top level parameter settings                             //
+//                 - illegal instructions                                     //
 //                                                                            //
-// Note:           This code was here from cv32e40p_core.sv in order to       //
-//                 remove the use of global defines in the RTL code.          //
+// Note:           This code was here from cv32e40px_core.sv and               //
+//                 cv32e40px_controller.sv in order to remove the use of       //
+//                 global defines in the RTL code.                            //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-`ifdef CV32E40P_APU_TRACE
-
-module cv32e40p_apu_tracer (
+module cv32e40px_core_log #(
+    parameter COREV_PULP =  1,  // PULP ISA Extension (incl. custom CSRs and hardware loop, excl. cv.elw)
+    parameter COREV_CLUSTER = 0,  // PULP Cluster interface (incl. cv.elw)
+    parameter FPU = 0,  // Floating Point Unit (interfaced via APU interface)
+    parameter ZFINX = 0,  // Float-in-General Purpose registers
+    parameter NUM_MHPMCOUNTERS = 1
+) (
     input logic        clk_i,
-    input logic        rst_n,
+    input logic        is_decoding_i,
+    input logic        illegal_insn_dec_i,
     input logic [31:0] hart_id_i,
-    input logic        apu_valid_i,
-    input logic [ 5:0] apu_waddr_i,
-    input logic [31:0] apu_result_i
+    input logic [31:0] pc_id_i
 );
 
-  int    apu_trace;
-  string fn;
-  string apu_waddr_trace;
-
-  // open/close output file for writing
+  // Log top level parameter values
   initial begin
-    wait(rst_n == 1'b1);
-    $sformat(fn, "apu_trace_core_%h.log", hart_id_i);
-    $display("[APU_TRACER %2d] Output filename is: %s", hart_id_i, fn);
-    apu_trace = $fopen(fn, "w");
-    $fwrite(apu_trace, "time       register \tresult\n");
+    $display(
+        "[cv32e40px_core]: COREV_PULP = %d, COREV_CLUSTER = %d, FPU %d, ZFINX %d, NUM_MHPMCOUNTERS %d",
+        COREV_PULP, COREV_CLUSTER, FPU, ZFINX, NUM_MHPMCOUNTERS);
+  end
 
-    while (1) begin
-
-      @(negedge clk_i);
-      if (apu_valid_i == 1'b1) begin
-        if (apu_waddr_i > 31) $sformat(apu_waddr_trace, "f%d", apu_waddr_i[4:0]);
-        else $sformat(apu_waddr_trace, "x%d", apu_waddr_i[4:0]);
-        $fwrite(apu_trace, "%t %s \t\t%h\n", $time, apu_waddr_trace, apu_result_i);
-      end
+  // Log illegal instructions
+  always_ff @(negedge clk_i) begin
+    // print warning in case of decoding errors
+    if (is_decoding_i && illegal_insn_dec_i) begin
+      $display("%t: Illegal instruction (core %0d) at PC 0x%h:", $time, hart_id_i[3:0], pc_id_i);
     end
-
   end
 
-  final begin
-    $fclose(apu_trace);
-  end
-
-endmodule  // cv32e40p_apu_tracer
-
-`endif  // CV32E40P_APU_TRACE
+endmodule  // cv32e40px_core_log

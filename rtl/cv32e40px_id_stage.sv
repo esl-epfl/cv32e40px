@@ -27,9 +27,9 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-module cv32e40p_id_stage
-  import cv32e40p_pkg::*;
-  import cv32e40p_apu_core_pkg::*;
+module cv32e40px_id_stage
+  import cv32e40px_pkg::*;
+  import cv32e40px_apu_core_pkg::*;
 #(
     parameter COREV_X_IF = 0,
     parameter COREV_PULP =  1,  // PULP ISA Extension (including PULP specific CSRs and hardware loop, excluding cv.elw)
@@ -405,9 +405,9 @@ module cv32e40p_id_stage
   logic [1:0] mult_dot_signed;  // Signed mode dot products (can be mixed types)
 
   // FPU signals
-  logic [cv32e40p_fpu_pkg::FP_FORMAT_BITS-1:0] fpu_src_fmt;
-  logic [cv32e40p_fpu_pkg::FP_FORMAT_BITS-1:0] fpu_dst_fmt;
-  logic [cv32e40p_fpu_pkg::INT_FORMAT_BITS-1:0] fpu_int_fmt;
+  logic [cv32e40px_fpu_pkg::FP_FORMAT_BITS-1:0] fpu_src_fmt;
+  logic [cv32e40px_fpu_pkg::FP_FORMAT_BITS-1:0] fpu_dst_fmt;
+  logic [cv32e40px_fpu_pkg::INT_FORMAT_BITS-1:0] fpu_int_fmt;
 
   // APU signals
   logic apu_en;
@@ -953,7 +953,7 @@ module cv32e40p_id_stage
   //                                                     //
   /////////////////////////////////////////////////////////
 
-  cv32e40p_register_file #(
+  cv32e40px_register_file #(
       .ADDR_WIDTH(6),
       .DATA_WIDTH(32),
       .FPU       (FPU),
@@ -1000,7 +1000,7 @@ module cv32e40p_id_stage
       //                                    //
       ////////////////////////////////////////
 
-      cv32e40p_x_disp x_disp_i (
+      cv32e40px_x_disp x_disp_i (
           // clock and reset
           .clk_i (clk),
           .rst_ni(rst_n),
@@ -1143,7 +1143,7 @@ module cv32e40p_id_stage
   //                                           //
   ///////////////////////////////////////////////
 
-  cv32e40p_decoder #(
+  cv32e40px_decoder #(
       .COREV_PULP      (COREV_PULP),
       .COREV_CLUSTER   (COREV_CLUSTER),
       .A_EXTENSION     (A_EXTENSION),
@@ -1282,7 +1282,7 @@ module cv32e40p_id_stage
   //                                                                //
   ////////////////////////////////////////////////////////////////////
 
-  cv32e40p_controller #(
+  cv32e40px_controller #(
       .COREV_CLUSTER(COREV_CLUSTER),
       .COREV_PULP   (COREV_PULP)
   ) controller_i (
@@ -1464,7 +1464,7 @@ module cv32e40p_id_stage
   //                                                                    //
   ////////////////////////////////////////////////////////////////////////
 
-  cv32e40p_int_controller #(
+  cv32e40px_int_controller #(
       .PULP_SECURE(PULP_SECURE)
   ) int_controller_i (
       .clk  (clk),
@@ -1474,13 +1474,13 @@ module cv32e40p_id_stage
       .irq_i    (irq_i),
       .irq_sec_i(irq_sec_i),
 
-      // To cv32e40p_controller
+      // To cv32e40px_controller
       .irq_req_ctrl_o(irq_req_ctrl),
       .irq_sec_ctrl_o(irq_sec_ctrl),
       .irq_id_ctrl_o (irq_id_ctrl),
       .irq_wu_ctrl_o (irq_wu_ctrl),
 
-      // To/from with cv32e40p_cs_registers
+      // To/from with cv32e40px_cs_registers
       .mie_bypass_i      (mie_bypass_i),
       .mip_o             (mip_o),
       .m_ie_i            (m_irq_enable_i),
@@ -1501,7 +1501,7 @@ module cv32e40p_id_stage
       ///////////////////////////////////////////////
 
 
-      cv32e40p_hwloop_regs #(
+      cv32e40px_hwloop_regs #(
           .N_REGS(N_HWLP)
       ) hwloop_regs_i (
           .clk  (clk),
@@ -1875,10 +1875,10 @@ module cv32e40p_id_stage
 
   always_comb begin
     if (FPU == 1) begin
-      assert (APU_NDSFLAGS_CPU >= C_RM+2*cv32e40p_fpu_pkg::FP_FORMAT_BITS+cv32e40p_fpu_pkg::INT_FORMAT_BITS)
+      assert (APU_NDSFLAGS_CPU >= C_RM+2*cv32e40px_fpu_pkg::FP_FORMAT_BITS+cv32e40px_fpu_pkg::INT_FORMAT_BITS)
       else
         $error("[apu] APU_NDSFLAGS_CPU APU flagbits is smaller than %0d",
-               C_RM + 2 * cv32e40p_fpu_pkg::FP_FORMAT_BITS + cv32e40p_fpu_pkg::INT_FORMAT_BITS);
+               C_RM + 2 * cv32e40px_fpu_pkg::FP_FORMAT_BITS + cv32e40px_fpu_pkg::INT_FORMAT_BITS);
     end
   end
 
@@ -2021,4 +2021,4 @@ module cv32e40p_id_stage
 
 `endif
 
-endmodule  // cv32e40p_id_stage
+endmodule  // cv32e40px_id_stage
