@@ -1336,7 +1336,6 @@ module cv32e40px_id_stage
       .deassert_we_o(deassert_we),
 
       .illegal_insn_i(illegal_insn),
-      .illegal_insn_dec_i(illegal_insn_dec),
       .ecall_insn_i  (ecall_insn_dec),
       .mret_insn_i   (mret_insn_dec),
       .uret_insn_i   (uret_insn_dec),

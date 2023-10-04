@@ -48,7 +48,6 @@ module cv32e40px_controller import cv32e40px_pkg::*;
   output logic        deassert_we_o,              // deassert write enable for next instruction
 
   input  logic        illegal_insn_i,             // xif confirmed the invalid instruction
-  input  logic        illegal_insn_dec_i,         // decoder encountered an invalid instruction
   input  logic        ecall_insn_i,               // decoder encountered an ecall instruction
   input  logic        mret_insn_i,                // decoder encountered an mret instruction
   input  logic        uret_insn_i,                // decoder encountered an uret instruction
