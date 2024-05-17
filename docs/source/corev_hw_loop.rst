@@ -1,19 +1,19 @@
 ..
-   Copyright (c) 2023 OpenHW Group
-   
-   Licensed under the Solderpad Hardware Licence, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
+   Copyright 2024 OpenHW Group and Dolphin Design
+   SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
+  
+   Licensed under the Solderpad Hardware License v 2.1 (the "License");
+   you may not use this file except in compliance with the License, or,
+   at your option, the Apache License version 2.0.
    You may obtain a copy of the License at
   
-   https://solderpad.org/licenses/
+   https://solderpad.org/licenses/SHL-2.1/
   
-   Unless required by applicable law or agreed to in writing, software
+   Unless required by applicable law or agreed to in writing, any work
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-  
-   SPDX-License-Identifier: Apache-2.0 WITH SHL-2.0
 
 .. _hwloop-specs:
 
@@ -51,21 +51,24 @@ Those constraint checks could be done only for each instruction in the hardware 
 
 The HWLoop constraints are:
 
--  HWLoop start, end and setup instructions addresses must be 32-bit aligned (short or long commands).
+-  HWLoop starti, endi, setupi and setup instructions addresses must be 32-bit aligned (PC-related instructions).
 
 -  Start and End addresses of an HWLoop body must be 32-bit aligned.
 
 -  End Address must be strictly greater than Start Address.
 
+-  HWLoop #0 (resp. #1) start and end addresses **must not be modified** if HWLoop #0 (resp. #1) count is different than 0.
+
 -  End address of an HWLoop must point to the instruction just after the last one of the HWLoop body.
 
 -  HWLoop body must contain at least 3 instructions.
 
--  When both loops are nested, the End address of the outermost HWLoop (must be #1) must be at least 2
-   instructions further than the End address of the innermost HWLoop (must be #0),
-   i.e. HWLoop[1].endaddress >= HWLoop[0].endaddress + 8.
-   Remark: To avoid to add 2 NOPs in case nothing can be put there by the compiler, lpcount setting of the the inner loop could be moved after it
-   without forgetting to add the same in the preamble before the outer loop start address.
+-  When both loops are nested, at least 1 instruction should be present between last innermost HWLoop (must be #0) instruction and
+   last outermost HWLoop (must be #1) instruction. In other words the End address of the outermost HWLoop must be at least 8
+   bytes further than the End address of the innermost HWLoop (HWLoop[1].endaddress >= HWLoop[0].endaddress + 8).
+
+   In the example below the first "addi %[j], %[j], 2;" instruction is the one added due to this constraint.
+   The code could have been simpler by using only one "addi %[j], %[j], 4;" instruction but to respect this constraint it has been split in two instructions.
 
 -  HWLoop must always be entered from its start location (no branch/jump to a location inside a HWLoop body).
 
@@ -103,58 +106,60 @@ Below an assembly code example of a nested HWLoop that computes a matrix additio
    asm volatile (
        "add %[i],x0, x0;"
        "add %[j],x0, x0;"
-       "cv.count  1, %[N];"
        ".balign 4;"
-       "cv.endi   1, endO;"
-       "cv.starti 1, startO;"
+       "cv.starti 1, start1;"
+       "cv.endi   1, end1;"
+       "cv.count  1, %[N];"
        "any instructions here"
        ".balign 4;"
-       "cv.endi   0, endZ;"
-       "cv.starti 0, startZ;"
-       "cv.count 0, %[N];"
+       "cv.starti 0, start0;"
+       "cv.endi   0, end0;"
        "any instructions here"
        ".balign 4;"
        ".option norvc;"
-       "startO:;"
-       "    startZ:;"
-       "        addi %[i], %[i], 1;"
-       "        addi %[i], %[i], 1;"
-       "        addi %[i], %[i], 1;"
-       "    endZ:;"
+       "start1:;"
        "    cv.count 0, %[N];"
+       "    start0:;"
+       "        addi %[i], %[i], 1;"
+       "        addi %[i], %[i], 1;"
+       "        addi %[i], %[i], 1;"
+       "    end0:;"
        "    addi %[j], %[j], 2;"
-       "endO:;"
+       "    addi %[j], %[j], 2;"
+       "end1:;"
        : [i] "+r" (i), [j] "+r" (j)
        : [N] "r" (10)
    );
 
+As HWLoop feature is enabled as soon as lpcountX > 0, lpstartX and lpendX **must** be programmed **before** lpcountX to avoid unexpected behavior.
+For HWLoop where body contains up to 30 instructions, it is always better to use cv.setup* instructions which are updating all 3 HWLoop CSRs in the same cycle.
 
 At the beginning of the HWLoop, the registers %[i] and %[j] are 0.
-The innermost loop, from startZ to (endZ - 4), adds to %[i] three times 1 and
-it is executed 10x10 times. Whereas the outermost loop, from startO to (endO - 4),
-executes 10 times the innermost loop and adds 2 to the register %[j].
-At the end of the loop, the register %[i] contains 300 and the register %[j] contains 20.
+The innermost loop, from start0 to (end0 - 4), adds to %[i] three times 1 and
+it is executed 10x10 times. Whereas the outermost loop, from start1 to (end1 - 4),
+executes 10 times the innermost loop and adds two times 2 to the register %[j].
+At the end of the loop, the register %[i] contains 300 and the register %[j] contains 40.
 
 .. _hwloop-exceptions_handlers:
 
-Hardware loops impact on application, exceptions handlers and debugger
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Hardware loops impact on application, exception handlers and debug program
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Application and ebreak/ecall exception handlers
 -----------------------------------------------
 
-When an ebreak or an ecall instruction is used in an application, special care should be given for those instruction handlers in case they are placed as the last instruction of an HWLoop.
+When an ebreak or an ecall instruction is used in an application, special care should be given for their respective exception handler in case those instructions are the last one of an HWLoop.
 Those handlers should manage MEPC and lpcountX CSRs updates because an hw loop early-exit could happen if not done.
 
 At the end of the handlers after restoring the context/CSRs, a piece of smart code should be added with following highest to lowest order of priority:
 
-1. if MEPC = lpend0 - 4 and lpcount0 > 1 then MPEC should be set to lpstart0 and lpcount0 should be decremented by 1,
-2. else if MEPC = lpend0 - 4 and lpcount0 = 1 then MPEC should be incremented by 4 and lpcount0 should be decremented by 1,
-3. else if MEPC = lpend1 - 4 and lpcount1 > 1 then MPEC should be set to lpstart1 and lpcount1 should be decremented by 1,
-4. else if MEPC = lpend1 - 4 and lpcount1 = 1 then MPEC should be incremented by 4 and lpcount1 should be decremented by 1,
-5. else if (lpstart0 <= MEPC < lpend0 - 4) or (lpstart1 <= MEPC < lpend1 - 4) then MPEC should be incremented by 4,
-6. else if instruction at MEPC location is either ecall or ebreak then MPEC should be incremented by 4,
-7. else if instruction at MEPC location location is c.ebreak then MPEC should be incremented by 2.
+1. if MEPC = lpend0 - 4 and lpcount0 > 1 then MEPC should be set to lpstart0 and lpcount0 should be decremented by 1,
+2. else if MEPC = lpend0 - 4 and lpcount0 = 1 then MEPC should be incremented by 4 and lpcount0 should be decremented by 1,
+3. else if MEPC = lpend1 - 4 and lpcount1 > 1 then MEPC should be set to lpstart1 and lpcount1 should be decremented by 1,
+4. else if MEPC = lpend1 - 4 and lpcount1 = 1 then MEPC should be incremented by 4 and lpcount1 should be decremented by 1,
+5. else if (lpstart0 <= MEPC < lpend0 - 4) or (lpstart1 <= MEPC < lpend1 - 4) then MEPC should be incremented by 4,
+6. else if instruction at MEPC location is either ecall or ebreak then MEPC should be incremented by 4,
+7. else if instruction at MEPC location location is c.ebreak then MEPC should be incremented by 2.
 
 The 2 last cases are the standard ones when ebreak/ecall are not inside an HWLopp.
 
@@ -162,9 +167,7 @@ Interrupt handlers
 ------------------
 
 When an interrupt is happening on the last HWLoop instruction, its execution is cancelled, its address is saved in MEPC and its execution will be resumed when returning from interrupt handler.
-There is nothing special to be done in those interrupt handlers with respect to MEPC and lpcountX updates, they will be correctly managed by design when executing this last HWLoop instruction after interrupt handler execution.
-
-Moreover since hardware loop could be used in interrupt routine, the registers have to be saved (resp. restored) at the beginning (resp. end) of the interrupt routine together with the general purpose registers.
+There is nothing special to be done in those interrupt handlers with respect to MEPC and lpcountX updates (except HWloop CSRs save/restore mentioned below), they will be correctly managed by design when executing this last HWLoop instruction after interrupt handler execution.
 
 Illegal instruction exception handler
 -------------------------------------
@@ -174,11 +177,17 @@ Depending if an application is going to resume or not after Illegal instruction 
 Debugger
 --------
 
-If ebreak is used to enter in Debug Mode (:ref:`ebreak_scenario_2`) and put at the last instruction location of an HWLoop (not very likely to happen), same management than above should be done but on DPC rather than on MEPC.
+If ebreak is used to enter in Debug Mode (:ref:`ebreak_scenario_2`) and put at the last instruction location of an HWLoop, same management than above should be done but on DPC rather than on MEPC.
 
 When ebreak instruction is used as Software Breakpoint by a debugger when in debug mode and is placed at the last instruction location of an HWLoop in instruction memory, no special management is foreseen.
 When executing the Software Breakpoint/ebreak instruction, control is given back to the debugger which will manage the different cases.
 For instance in Single-Step case, original instruction is put back in instruction memory, a Single-Step command is executed on this last instruction (with desgin updating PC and lpcountX to correct values) and Software Breakpoint/ebreak is put back by the debugger in memory.
  
-When ecall instruction is used by a debugger to execute System Calls and is placed at the last instruction location of an HWLoop in instruction memory, debugger ecall handler in debug rom should do the same than described above for application case.
+When ecall instruction is used by a debugger to execute System Calls and is placed at the last instruction location of an HWLoop in instruction memory, debugger ecall handler in debug program should do the same than described above for application case.
 
+HWloop CSRs save and restore
+----------------------------
+
+As synchronous/asynchronous exception or a debug event happening during HWloop execution is interrupting the normal HWloop execution, special care should be given to HWloop CSRs in case any exception handler or debug program is going to use HWloop feature (or even just call functions using them like memmove, memcpy...).
+
+So HWloop CSRs save/restore should be added together with the general purpose registers to exception handlers or debug program.
