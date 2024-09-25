@@ -272,7 +272,7 @@ module cv32e40px_x_disp
       if (x_control_illegal_reset_i) begin
         x_illegal_insn_q <= 1'b0;
       end else begin
-        x_illegal_insn_q  <= x_illegal_insn_n;
+        x_illegal_insn_q <= x_illegal_insn_n;
       end
     end
   end
